@@ -2,11 +2,31 @@ package app
 
 import (
 	"context"
+	"log/slog"
+	"time"
 
 	"github.com/highway-to-Golang/user-service/config"
+	"github.com/highway-to-Golang/user-service/internal/http"
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
+	server := http.NewServer(*cfg)
+
+	go func() {
+		if err := server.Start(); err != nil {
+			slog.Error("HTTP server error", "error", err)
+		}
+	}()
+
+	<-ctx.Done()
+	slog.Info("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return err
+	}
 
 	return nil
 }

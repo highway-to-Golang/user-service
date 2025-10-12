@@ -22,9 +22,10 @@ func main() {
 	}
 
 	slog.Info("cfg", "cfg", cfg)
+
 	err = app.Run(ctx, cfg)
 	if err != nil {
 		slog.Error("Error running app", "error", err.Error())
+		os.Exit(1)
 	}
-	<-ctx.Done()
 }
