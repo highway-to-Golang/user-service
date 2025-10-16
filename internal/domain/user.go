@@ -7,6 +7,10 @@ import (
 	"github.com/highway-to-Golang/user-service/internal/errors"
 )
 
+var (
+	ErrNotFound = errors.ErrNotFound
+)
+
 type User struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
@@ -34,11 +38,9 @@ func NewUser(name, email, role string) (User, error) {
 		return User{}, errors.ErrFailedToBuild
 	}
 	return User{
-		ID:        id.String(),
-		Name:      name,
-		Email:     email,
-		Role:      role,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:    id.String(),
+		Name:  name,
+		Email: email,
+		Role:  role,
 	}, nil
 }

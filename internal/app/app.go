@@ -6,11 +6,21 @@ import (
 	"time"
 
 	"github.com/highway-to-Golang/user-service/config"
+	"github.com/highway-to-Golang/user-service/internal/database"
 	"github.com/highway-to-Golang/user-service/internal/http"
+	"github.com/highway-to-Golang/user-service/internal/repository"
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
-	server := http.NewServer(*cfg)
+	db, err := database.NewDB(ctx, *cfg)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	userRepo := repository.NewUserRepository(db)
+	userHandler := http.NewUserHandler(userRepo)
+	server := http.NewServer(*cfg, userHandler)
 
 	go func() {
 		if err := server.Start(); err != nil {

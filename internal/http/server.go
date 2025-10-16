@@ -14,8 +14,7 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func NewServer(cfg config.Config) *Server {
-	userHandler := NewUserHandler()
+func NewServer(cfg config.Config, userHandler *UserHandler) *Server {
 	router := NewRouter(userHandler)
 
 	handler := LoggingMiddleware(router)

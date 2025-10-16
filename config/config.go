@@ -14,6 +14,7 @@ type (
 		Port     string `env:"PG_PORT" env-default:"5432"`
 		User     string `env:"PG_USER" env-default:"postgres"`
 		Password string `env:"PG_PASSWORD" env-default:"postgres"`
+		Database string `env:"PG_DATABASE" env-default:"user_service"`
 	}
 	HTTP struct {
 		Host string `env:"HTTP_HOST" env-default:"localhost"`
