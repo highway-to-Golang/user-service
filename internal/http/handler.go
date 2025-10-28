@@ -2,20 +2,21 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
-	"github.com/highway-to-Golang/user-service/internal/repository"
+	"github.com/highway-to-Golang/user-service/internal/usecase"
 )
 
 type UserHandler struct {
-	userRepo *repository.UserRepository
+	uc *usecase.UseCase
 }
 
-func NewUserHandler(userRepo *repository.UserRepository) *UserHandler {
+func NewUserHandler(uc *usecase.UseCase) *UserHandler {
 	return &UserHandler{
-		userRepo: userRepo,
+		uc: uc,
 	}
 }
 
@@ -27,37 +28,27 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	}
 }
 
+func writeErrorJSON(w http.ResponseWriter, status int, message string) {
+	errorResponse := map[string]interface{}{
+		"error": message,
+	}
+	writeJSON(w, status, errorResponse)
+}
+
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req domain.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error("failed to decode request body", "error", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		writeErrorJSON(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	if req.Email == "" || req.Name == "" {
-		http.Error(w, "Email and name are required", http.StatusBadRequest)
-		return
-	}
-
-	if req.Role == "" {
-		req.Role = "user"
-	}
-
-	user, err := domain.NewUser(req.Name, req.Email, req.Role)
+	user, err := h.uc.CreateUser(r.Context(), req)
 	if err != nil {
 		slog.Error("failed to create user", "error", err)
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		writeErrorJSON(w, http.StatusUnprocessableEntity, "Failed to create user")
 		return
 	}
-
-	if err := h.userRepo.Create(r.Context(), user); err != nil {
-		slog.Error("failed to save user", "error", err)
-		http.Error(w, "Failed to save user", http.StatusInternalServerError)
-		return
-	}
-
-	slog.Info("user created successfully", "user_id", user.ID, "email", user.Email)
 
 	writeJSON(w, http.StatusCreated, user)
 }
@@ -65,16 +56,14 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	slog.Info("getting user", "id", id)
-
-	user, err := h.userRepo.GetByID(r.Context(), id)
+	user, err := h.uc.GetUser(r.Context(), id)
 	if err != nil {
-		if err == domain.ErrNotFound {
-			http.Error(w, "User not found", http.StatusNotFound)
+		if errors.Is(err, domain.ErrNotFound) {
+			writeErrorJSON(w, http.StatusNotFound, "User not found")
 			return
 		}
 		slog.Error("failed to get user", "error", err, "user_id", id)
-		http.Error(w, "Failed to get user", http.StatusInternalServerError)
+		writeErrorJSON(w, http.StatusUnprocessableEntity, "Failed to get user")
 		return
 	}
 
@@ -82,12 +71,10 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	slog.Info("getting all users")
-
-	users, err := h.userRepo.GetAll(r.Context())
+	users, err := h.uc.GetAllUsers(r.Context())
 	if err != nil {
 		slog.Error("failed to get users", "error", err)
-		http.Error(w, "Failed to get users", http.StatusInternalServerError)
+		writeErrorJSON(w, http.StatusUnprocessableEntity, "Failed to get users")
 		return
 	}
 
@@ -105,65 +92,34 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var req domain.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error("failed to decode request body", "error", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		writeErrorJSON(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	existingUser, err := h.userRepo.GetByID(r.Context(), id)
+	user, err := h.uc.UpdateUser(r.Context(), id, req)
 	if err != nil {
-		if err == domain.ErrNotFound {
-			http.Error(w, "User not found", http.StatusNotFound)
-			return
-		}
-		slog.Error("failed to get user for update", "error", err, "user_id", id)
-		http.Error(w, "Failed to get user", http.StatusInternalServerError)
-		return
-	}
-
-	if req.Email != nil {
-		existingUser.Email = *req.Email
-	}
-	if req.Name != nil {
-		existingUser.Name = *req.Name
-	}
-	if req.Role != "" {
-		existingUser.Role = req.Role
-	}
-
-	slog.Info("updating user", "id", id, "email", existingUser.Email, "name", existingUser.Name)
-
-	if err := h.userRepo.Update(r.Context(), id, existingUser); err != nil {
-		if err == domain.ErrNotFound {
-			http.Error(w, "User not found", http.StatusNotFound)
+		if errors.Is(err, domain.ErrNotFound) {
+			writeErrorJSON(w, http.StatusNotFound, "User not found")
 			return
 		}
 		slog.Error("failed to update user", "error", err, "user_id", id)
-		http.Error(w, "Failed to update user", http.StatusInternalServerError)
+		writeErrorJSON(w, http.StatusUnprocessableEntity, "Failed to update user")
 		return
 	}
 
-	updatedUser, err := h.userRepo.GetByID(r.Context(), id)
-	if err != nil {
-		slog.Error("failed to get updated user", "error", err, "user_id", id)
-		http.Error(w, "Failed to get updated user", http.StatusInternalServerError)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, updatedUser)
+	writeJSON(w, http.StatusOK, user)
 }
 
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	slog.Info("deleting user", "id", id)
-
-	if err := h.userRepo.Delete(r.Context(), id); err != nil {
-		if err == domain.ErrNotFound {
-			http.Error(w, "User not found", http.StatusNotFound)
+	if err := h.uc.DeleteUser(r.Context(), id); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			writeErrorJSON(w, http.StatusNotFound, "User not found")
 			return
 		}
 		slog.Error("failed to delete user", "error", err, "user_id", id)
-		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+		writeErrorJSON(w, http.StatusUnprocessableEntity, "Failed to delete user")
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/highway-to-Golang/user-service/internal/database"
 	"github.com/highway-to-Golang/user-service/internal/http"
 	"github.com/highway-to-Golang/user-service/internal/repository"
+	"github.com/highway-to-Golang/user-service/internal/usecase"
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
@@ -19,7 +20,8 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	defer db.Close()
 
 	userRepo := repository.NewUserRepository(db)
-	userHandler := http.NewUserHandler(userRepo)
+	userUC := usecase.New(userRepo)
+	userHandler := http.NewUserHandler(userUC)
 	server := http.NewServer(*cfg, userHandler)
 
 	go func() {
