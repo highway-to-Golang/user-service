@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"time"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
 )
@@ -18,14 +19,28 @@ type EventSink interface {
 	Publish(ctx context.Context, method string) error
 }
 
-type UseCase struct {
-	repository Repository
-	eventSink  EventSink
+type IdempotencyStorage interface {
+	GetResult(ctx context.Context, key string) ([]byte, error)
+	SaveResult(ctx context.Context, key string, value []byte, ttl time.Duration) error
+	AcquireLock(ctx context.Context, key string, ttl time.Duration) (bool, error)
+	ReleaseLock(ctx context.Context, key string) error
 }
 
-func New(repository Repository, eventSink EventSink) *UseCase {
+type UseCase struct {
+	repository         Repository
+	eventSink          EventSink
+	idempotencyStorage IdempotencyStorage
+
+	locksTTL       time.Duration
+	idempotencyTTL time.Duration
+}
+
+func New(repository Repository, eventSink EventSink, idempotencyStorage IdempotencyStorage) *UseCase {
 	return &UseCase{
-		repository: repository,
-		eventSink:  eventSink,
+		repository:         repository,
+		eventSink:          eventSink,
+		idempotencyStorage: idempotencyStorage,
+		locksTTL:           30 * time.Second,
+		idempotencyTTL:     24 * time.Hour,
 	}
 }

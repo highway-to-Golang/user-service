@@ -9,6 +9,7 @@ import (
 	"github.com/highway-to-Golang/user-service/internal/database"
 	"github.com/highway-to-Golang/user-service/internal/http"
 	"github.com/highway-to-Golang/user-service/internal/nats"
+	"github.com/highway-to-Golang/user-service/internal/redis"
 	"github.com/highway-to-Golang/user-service/internal/repository"
 	"github.com/highway-to-Golang/user-service/internal/usecase"
 )
@@ -34,7 +35,19 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		eventSink = nats.NullEventSink{}
 	}
 
-	userUC := usecase.New(userRepo, eventSink)
+	var idempotencyStorage usecase.IdempotencyStorage
+	if cfg.Redis.URL != "" {
+		is, err := redis.NewIdempotencyStorage(cfg.Redis.URL)
+		if err != nil {
+			return err
+		}
+		defer is.Close()
+		idempotencyStorage = is
+	} else {
+		idempotencyStorage = redis.NullIdempotencyStorage{}
+	}
+
+	userUC := usecase.New(userRepo, eventSink, idempotencyStorage)
 	userHandler := http.NewUserHandler(userUC)
 	server := http.NewServer(*cfg, userHandler)
 

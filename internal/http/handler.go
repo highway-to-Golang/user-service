@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
+	apperrors "github.com/highway-to-Golang/user-service/internal/errors"
 	"github.com/highway-to-Golang/user-service/internal/usecase"
 )
 
@@ -36,6 +37,8 @@ func writeErrorJSON(w http.ResponseWriter, status int, message string) {
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	idempotencyKey := r.Header.Get("Idempotency-Key")
+
 	var req domain.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error("failed to decode request body", "error", err)
@@ -43,8 +46,12 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.uc.CreateUser(r.Context(), req)
+	user, err := h.uc.CreateUser(r.Context(), idempotencyKey, req)
 	if err != nil {
+		if errors.Is(err, apperrors.ErrRequestAlreadyInProgress) {
+			writeErrorJSON(w, http.StatusUnprocessableEntity, "Request already in progress")
+			return
+		}
 		slog.Error("failed to create user", "error", err)
 		writeErrorJSON(w, http.StatusUnprocessableEntity, "Failed to create user")
 		return

@@ -6,9 +6,10 @@ import (
 
 type (
 	Config struct {
-		PG   PG
-		HTTP HTTP
-		NATS NATS
+		PG    PG
+		HTTP  HTTP
+		NATS  NATS
+		Redis Redis
 	}
 	PG struct {
 		Host     string `env:"PG_HOST" env-default:"localhost"`
@@ -25,6 +26,9 @@ type (
 		Enabled       bool   `env:"NATS_ENABLED" env-default:"false"`
 		URL           string `env:"NATS_URL" env-default:"nats://localhost:4222"`
 		SubjectPrefix string `env:"NATS_SUBJECT_PREFIX" env-default:"user.events"`
+	}
+	Redis struct {
+		URL string `env:"REDIS_URL" env-default:"redis://localhost:6379"`
 	}
 )
 
