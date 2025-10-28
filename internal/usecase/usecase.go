@@ -14,12 +14,18 @@ type Repository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type UseCase struct {
-	repository Repository
+type EventSink interface {
+	Publish(ctx context.Context, method string) error
 }
 
-func New(repository Repository) *UseCase {
+type UseCase struct {
+	repository Repository
+	eventSink  EventSink
+}
+
+func New(repository Repository, eventSink EventSink) *UseCase {
 	return &UseCase{
 		repository: repository,
+		eventSink:  eventSink,
 	}
 }

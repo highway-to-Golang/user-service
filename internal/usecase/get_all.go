@@ -17,5 +17,9 @@ func (uc *UseCase) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 		return nil, fmt.Errorf("failed to get users: %w", err)
 	}
 
+	if err := uc.eventSink.Publish(ctx, "get_all"); err != nil {
+		slog.Warn("failed to publish event", "error", err, "method", "get_all")
+	}
+
 	return users, nil
 }

@@ -8,6 +8,7 @@ type (
 	Config struct {
 		PG   PG
 		HTTP HTTP
+		NATS NATS
 	}
 	PG struct {
 		Host     string `env:"PG_HOST" env-default:"localhost"`
@@ -19,6 +20,11 @@ type (
 	HTTP struct {
 		Host string `env:"HTTP_HOST" env-default:"localhost"`
 		Port string `env:"HTTP_PORT" env-default:"8080"`
+	}
+	NATS struct {
+		Enabled       bool   `env:"NATS_ENABLED" env-default:"false"`
+		URL           string `env:"NATS_URL" env-default:"nats://localhost:4222"`
+		SubjectPrefix string `env:"NATS_SUBJECT_PREFIX" env-default:"user.events"`
 	}
 )
 
