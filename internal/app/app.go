@@ -19,11 +19,11 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer db.Pool.Close()
 
 	userRepo := repository.NewUserRepository(db)
 
-	var eventSink usecase.EventSink
+	var eventSink *nats.EventSink
 	if cfg.NATS.Enabled {
 		es, err := nats.New(cfg.NATS.URL, cfg.NATS.SubjectPrefix)
 		if err != nil {
@@ -31,11 +31,9 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		}
 		defer es.Close()
 		eventSink = es
-	} else {
-		eventSink = nats.NullEventSink{}
 	}
 
-	var idempotencyStorage usecase.IdempotencyStorage
+	var idempotencyStorage *redis.IdempotencyStorage
 	if cfg.Redis.URL != "" {
 		is, err := redis.NewIdempotencyStorage(cfg.Redis.URL)
 		if err != nil {
@@ -43,11 +41,9 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		}
 		defer is.Close()
 		idempotencyStorage = is
-	} else {
-		idempotencyStorage = redis.NullIdempotencyStorage{}
 	}
 
-	userUC := usecase.New(userRepo, eventSink, idempotencyStorage)
+	userUC := usecase.New(userRepo, eventSink, idempotencyStorage, cfg)
 	userHandler := http.NewUserHandler(userUC)
 	server := http.NewServer(*cfg, userHandler)
 

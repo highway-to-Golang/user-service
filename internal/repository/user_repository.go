@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -18,7 +19,7 @@ type UserRepository struct {
 }
 
 func NewUserRepository(db *database.DB) *UserRepository {
-	goquDB := goqu.New("postgres", db.SQLDB())
+	goquDB := goqu.New("postgres", nil)
 
 	return &UserRepository{
 		db:   db,
@@ -43,7 +44,7 @@ func (r *UserRepository) Create(ctx context.Context, user domain.User) error {
 
 	slog.Debug("executing insert query", "query", query, "args", args)
 
-	_, err = r.db.Exec(ctx, query, args...)
+	_, err = r.db.Pool.Exec(ctx, query, args...)
 	if err != nil {
 		slog.Error("failed to create user", "error", err, "user_id", user.ID)
 		return fmt.Errorf("failed to create user: %w", err)
@@ -67,7 +68,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, e
 	slog.Debug("executing select query", "query", query, "args", args)
 
 	var user domain.User
-	err = r.db.QueryRow(ctx, query, args...).Scan(
+	err = r.db.Pool.QueryRow(ctx, query, args...).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,
@@ -77,7 +78,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, e
 	)
 
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			slog.Warn("user not found", "user_id", id)
 			return domain.User{}, domain.ErrNotFound
 		}
@@ -102,7 +103,7 @@ func (r *UserRepository) GetAll(ctx context.Context) ([]domain.User, error) {
 
 	slog.Debug("executing select all query", "query", query, "args", args)
 
-	rows, err := r.db.Query(ctx, query, args...)
+	rows, err := r.db.Pool.Query(ctx, query, args...)
 	if err != nil {
 		slog.Error("failed to get users", "error", err)
 		return nil, fmt.Errorf("failed to get users: %w", err)
@@ -156,7 +157,7 @@ func (r *UserRepository) Update(ctx context.Context, id string, user domain.User
 
 	slog.Debug("executing update query", "query", query, "args", args)
 
-	result, err := r.db.Exec(ctx, query, args...)
+	result, err := r.db.Pool.Exec(ctx, query, args...)
 	if err != nil {
 		slog.Error("failed to update user", "error", err, "user_id", id)
 		return fmt.Errorf("failed to update user: %w", err)
@@ -183,7 +184,7 @@ func (r *UserRepository) Delete(ctx context.Context, id string) error {
 
 	slog.Debug("executing delete query", "query", query, "args", args)
 
-	result, err := r.db.Exec(ctx, query, args...)
+	result, err := r.db.Pool.Exec(ctx, query, args...)
 	if err != nil {
 		slog.Error("failed to delete user", "error", err, "user_id", id)
 		return fmt.Errorf("failed to delete user: %w", err)

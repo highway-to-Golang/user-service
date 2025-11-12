@@ -21,8 +21,10 @@ func (uc *UseCase) DeleteUser(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
 
-	if err := uc.eventSink.Publish(ctx, "delete"); err != nil {
-		slog.Warn("failed to publish event", "error", err, "method", "delete")
+	if uc.cfg.NATS.Enabled && uc.eventSink != nil {
+		if err := uc.eventSink.Publish(ctx, "delete"); err != nil {
+			slog.Warn("failed to publish event", "error", err, "method", "delete")
+		}
 	}
 
 	return nil

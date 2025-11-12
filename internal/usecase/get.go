@@ -22,8 +22,10 @@ func (uc *UseCase) GetUser(ctx context.Context, id string) (domain.User, error) 
 		return domain.User{}, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	if err := uc.eventSink.Publish(ctx, "get"); err != nil {
-		slog.Warn("failed to publish event", "error", err, "method", "get")
+	if uc.cfg.NATS.Enabled && uc.eventSink != nil {
+		if err := uc.eventSink.Publish(ctx, "get"); err != nil {
+			slog.Warn("failed to publish event", "error", err, "method", "get")
+		}
 	}
 
 	return user, nil

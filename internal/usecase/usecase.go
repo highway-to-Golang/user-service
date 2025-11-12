@@ -4,7 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/highway-to-Golang/user-service/config"
 	"github.com/highway-to-Golang/user-service/internal/domain"
+	"github.com/highway-to-Golang/user-service/internal/nats"
+	"github.com/highway-to-Golang/user-service/internal/redis"
 )
 
 type Repository interface {
@@ -15,31 +18,22 @@ type Repository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type EventSink interface {
-	Publish(ctx context.Context, method string) error
-}
-
-type IdempotencyStorage interface {
-	GetResult(ctx context.Context, key string) ([]byte, error)
-	SaveResult(ctx context.Context, key string, value []byte, ttl time.Duration) error
-	AcquireLock(ctx context.Context, key string, ttl time.Duration) (bool, error)
-	ReleaseLock(ctx context.Context, key string) error
-}
-
 type UseCase struct {
 	repository         Repository
-	eventSink          EventSink
-	idempotencyStorage IdempotencyStorage
+	eventSink          *nats.EventSink
+	idempotencyStorage *redis.IdempotencyStorage
+	cfg                *config.Config
 
 	locksTTL       time.Duration
 	idempotencyTTL time.Duration
 }
 
-func New(repository Repository, eventSink EventSink, idempotencyStorage IdempotencyStorage) *UseCase {
+func New(repository Repository, eventSink *nats.EventSink, idempotencyStorage *redis.IdempotencyStorage, cfg *config.Config) *UseCase {
 	return &UseCase{
 		repository:         repository,
 		eventSink:          eventSink,
 		idempotencyStorage: idempotencyStorage,
+		cfg:                cfg,
 		locksTTL:           30 * time.Second,
 		idempotencyTTL:     24 * time.Hour,
 	}

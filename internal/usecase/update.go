@@ -45,8 +45,10 @@ func (uc *UseCase) UpdateUser(ctx context.Context, id string, req domain.UpdateU
 		return domain.User{}, fmt.Errorf("failed to get updated user: %w", err)
 	}
 
-	if err := uc.eventSink.Publish(ctx, "update"); err != nil {
-		slog.Warn("failed to publish event", "error", err, "method", "update")
+	if uc.cfg.NATS.Enabled && uc.eventSink != nil {
+		if err := uc.eventSink.Publish(ctx, "update"); err != nil {
+			slog.Warn("failed to publish event", "error", err, "method", "update")
+		}
 	}
 
 	return updatedUser, nil

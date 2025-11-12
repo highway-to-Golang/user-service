@@ -11,7 +11,7 @@ import (
 )
 
 func (uc *UseCase) CreateUser(ctx context.Context, idempotencyKey string, req domain.CreateUserRequest) (domain.User, error) {
-	if idempotencyKey != "" {
+	if idempotencyKey != "" && uc.cfg.Redis.URL != "" && uc.idempotencyStorage != nil {
 		cached, err := uc.idempotencyStorage.GetResult(ctx, idempotencyKey)
 		if err != nil {
 			slog.ErrorContext(ctx, "uc.idempotencyStorage.GetResult", "err", err, "key", idempotencyKey)
@@ -76,7 +76,7 @@ func (uc *UseCase) CreateUser(ctx context.Context, idempotencyKey string, req do
 		return domain.User{}, fmt.Errorf("failed to save user: %w", err)
 	}
 
-	if idempotencyKey != "" {
+	if idempotencyKey != "" && uc.cfg.Redis.URL != "" && uc.idempotencyStorage != nil {
 		data, err := json.Marshal(user)
 		if err != nil {
 			slog.ErrorContext(ctx, "json.Marshal", "err", err)
@@ -87,8 +87,10 @@ func (uc *UseCase) CreateUser(ctx context.Context, idempotencyKey string, req do
 		}
 	}
 
-	if err := uc.eventSink.Publish(ctx, "create"); err != nil {
-		slog.Warn("failed to publish event", "error", err, "method", "create")
+	if uc.cfg.NATS.Enabled && uc.eventSink != nil {
+		if err := uc.eventSink.Publish(ctx, "create"); err != nil {
+			slog.Warn("failed to publish event", "error", err, "method", "create")
+		}
 	}
 
 	slog.Info("user created successfully", "user_id", user.ID, "email", user.Email)
