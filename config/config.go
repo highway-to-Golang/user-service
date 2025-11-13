@@ -35,6 +35,11 @@ type (
 	Redis struct {
 		URL string `env:"REDIS_URL" env-default:"redis://localhost:6379"`
 	}
+	Client struct {
+		Protocol string `env:"CLIENT_PROTOCOL" env-default:"http"`
+		HTTPURL  string `env:"CLIENT_HTTP_URL" env-default:"http://localhost:8080"`
+		GRPCAddr string `env:"CLIENT_GRPC_ADDR" env-default:"localhost:8081"`
+	}
 )
 
 func NewConfig() (*Config, error) {
@@ -46,4 +51,15 @@ func NewConfig() (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+func NewClientConfig() (*Client, error) {
+	var clientConfig Client
+	_ = cleanenv.ReadConfig(".env", &clientConfig)
+
+	if err := cleanenv.ReadEnv(&clientConfig); err != nil {
+		return nil, err
+	}
+
+	return &clientConfig, nil
 }

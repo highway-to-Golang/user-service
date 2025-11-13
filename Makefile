@@ -6,6 +6,8 @@ PROTO_GEN_DIR=api/proto/gen/go
 PROTO_FILES=$(wildcard $(PROTO_DIR)/*.proto)
 BINARY_NAME=user-service
 BINARY_PATH=./bin/$(BINARY_NAME)
+CLIENT_BINARY_NAME=user-client
+CLIENT_BINARY_PATH=./bin/$(CLIENT_BINARY_NAME)
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -33,8 +35,14 @@ proto: ## Generate Go code from proto files
 build: proto ## Build the application
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p bin
-	@go build -o $(BINARY_PATH) ./cmd/app
+	@go build -o $(BINARY_PATH) ./cmd/server
 	@echo "Binary built: $(BINARY_PATH)"
+
+build-client: proto ## Build the client application
+	@echo "Building $(CLIENT_BINARY_NAME)..."
+	@mkdir -p bin
+	@go build -o $(CLIENT_BINARY_PATH) ./cmd/client
+	@echo "Client binary built: $(CLIENT_BINARY_PATH)"
 
 run: build ## Build and run the application
 	@echo "Running $(BINARY_NAME)..."
