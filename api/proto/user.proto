@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/highway-to-Golang/user-service/api/proto/gen/go/user";
+
+import "google/protobuf/timestamp.proto";
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string role = 3;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetAllUsersRequest {
+}
+
+message GetAllUsersResponse {
+  repeated User users = 1;
+  int32 total = 2;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string email = 3;
+  string role = 4;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserResponse {
+  string message = 1;
+}
+

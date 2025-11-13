@@ -8,6 +8,7 @@ type (
 	Config struct {
 		PG    PG
 		HTTP  HTTP
+		GRPC  GRPC
 		NATS  NATS
 		Redis Redis
 	}
@@ -21,6 +22,10 @@ type (
 	HTTP struct {
 		Host string `env:"HTTP_HOST" env-default:"localhost"`
 		Port string `env:"HTTP_PORT" env-default:"8080"`
+	}
+	GRPC struct {
+		Host string `env:"GRPC_HOST" env-default:"localhost"`
+		Port string `env:"GRPC_PORT" env-default:"8081"`
 	}
 	NATS struct {
 		Enabled       bool   `env:"NATS_ENABLED" env-default:"false"`
