@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/highway-to-Golang/user-service/config"
-	"github.com/highway-to-Golang/user-service/internal/app"
+	"github.com/highway-to-Golang/user-service/internal/server"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = app.Run(ctx, cfg)
+	err = server.Run(ctx, cfg)
 	if err != nil {
 		slog.Error("Error running app", "error", err.Error())
 		os.Exit(1)
