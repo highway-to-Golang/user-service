@@ -1,4 +1,4 @@
-package app
+package server
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/highway-to-Golang/user-service/config"
 	"github.com/highway-to-Golang/user-service/internal/database"
+	"github.com/highway-to-Golang/user-service/internal/grpc"
 	"github.com/highway-to-Golang/user-service/internal/http"
 	"github.com/highway-to-Golang/user-service/internal/nats"
 	"github.com/highway-to-Golang/user-service/internal/redis"
@@ -44,12 +45,22 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}
 
 	userUC := usecase.New(userRepo, eventSink, idempotencyStorage, cfg)
-	userHandler := http.NewUserHandler(userUC)
-	server := http.NewServer(*cfg, userHandler)
+
+	httpUserHandler := http.NewUserHandler(userUC)
+	httpServer := http.NewServer(*cfg, httpUserHandler)
+
+	grpcUserHandler := grpc.NewUserHandler(userUC)
+	grpcServer := grpc.NewServer(*cfg, grpcUserHandler)
 
 	go func() {
-		if err := server.Start(); err != nil {
+		if err := httpServer.Start(); err != nil {
 			slog.Error("HTTP server error", "error", err)
+		}
+	}()
+
+	go func() {
+		if err := grpcServer.Start(); err != nil {
+			slog.Error("gRPC server error", "error", err)
 		}
 	}()
 
@@ -59,9 +70,16 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		return err
+	var shutdownErr error
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		shutdownErr = err
+		slog.Error("HTTP server shutdown error", "error", err)
 	}
 
-	return nil
+	if err := grpcServer.Shutdown(shutdownCtx); err != nil {
+		shutdownErr = err
+		slog.Error("gRPC server shutdown error", "error", err)
+	}
+
+	return shutdownErr
 }

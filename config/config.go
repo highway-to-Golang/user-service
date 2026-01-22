@@ -8,6 +8,7 @@ type (
 	Config struct {
 		PG    PG
 		HTTP  HTTP
+		GRPC  GRPC
 		NATS  NATS
 		Redis Redis
 	}
@@ -22,6 +23,10 @@ type (
 		Host string `env:"HTTP_HOST" env-default:"localhost"`
 		Port string `env:"HTTP_PORT" env-default:"8080"`
 	}
+	GRPC struct {
+		Host string `env:"GRPC_HOST" env-default:"localhost"`
+		Port string `env:"GRPC_PORT" env-default:"8081"`
+	}
 	NATS struct {
 		Enabled       bool   `env:"NATS_ENABLED" env-default:"false"`
 		URL           string `env:"NATS_URL" env-default:"nats://localhost:4222"`
@@ -29,6 +34,11 @@ type (
 	}
 	Redis struct {
 		URL string `env:"REDIS_URL" env-default:"redis://localhost:6379"`
+	}
+	Client struct {
+		Protocol string `env:"CLIENT_PROTOCOL" env-default:"http"`
+		HTTPURL  string `env:"CLIENT_HTTP_URL" env-default:"http://localhost:8080"`
+		GRPCAddr string `env:"CLIENT_GRPC_ADDR" env-default:"localhost:8081"`
 	}
 )
 
@@ -41,4 +51,15 @@ func NewConfig() (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+func NewClientConfig() (*Client, error) {
+	var clientConfig Client
+	_ = cleanenv.ReadConfig(".env", &clientConfig)
+
+	if err := cleanenv.ReadEnv(&clientConfig); err != nil {
+		return nil, err
+	}
+
+	return &clientConfig, nil
 }
