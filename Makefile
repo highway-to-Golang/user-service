@@ -52,6 +52,10 @@ test: ## Run tests
 	@echo "Running tests..."
 	@go test -v ./...
 
+lint: ## Run golangci-lint
+	@echo "Running golangci-lint..."
+	@golangci-lint run --timeout=5m || (echo "golangci-lint not available. Install it: https://golangci-lint.run/usage/install/" && exit 1)
+
 clean: ## Clean generated files and binaries
 	@echo "Cleaning..."
 	@rm -rf $(PROTO_GEN_DIR)

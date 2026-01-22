@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
+	"github.com/highway-to-Golang/user-service/internal/monitoring"
 )
 
 func (uc *UseCase) UpdateUser(ctx context.Context, id string, req domain.UpdateUserRequest) (domain.User, error) {
@@ -50,6 +51,8 @@ func (uc *UseCase) UpdateUser(ctx context.Context, id string, req domain.UpdateU
 			slog.Warn("failed to publish event", "error", err, "method", "update")
 		}
 	}
+
+	monitoring.UsersUpdated.Inc()
 
 	return updatedUser, nil
 }

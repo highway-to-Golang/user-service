@@ -6,11 +6,14 @@ import (
 
 type (
 	Config struct {
-		PG    PG
-		HTTP  HTTP
-		GRPC  GRPC
-		NATS  NATS
-		Redis Redis
+		PG         PG
+		HTTP       HTTP
+		GRPC       GRPC
+		NATS       NATS
+		Redis      Redis
+		Monitoring Monitoring
+		Tracing    Tracing
+		Pprof      Pprof
 	}
 	PG struct {
 		Host     string `env:"PG_HOST" env-default:"localhost"`
@@ -34,6 +37,21 @@ type (
 	}
 	Redis struct {
 		URL string `env:"REDIS_URL" env-default:"redis://localhost:6379"`
+	}
+	Monitoring struct {
+		Enabled bool   `env:"MONITORING_ENABLED" env-default:"true"`
+		Port    string `env:"MONITORING_PORT" env-default:"9090"`
+	}
+	Tracing struct {
+		Enabled bool   `env:"TRACING_ENABLED" env-default:"true"`
+		Service string `env:"TRACING_SERVICE" env-default:"user-service"`
+		Jaeger  Jaeger
+	}
+	Jaeger struct {
+		Endpoint string `env:"JAEGER_ENDPOINT" env-default:"http://localhost:14268/api/traces"`
+	}
+	Pprof struct {
+		Enabled bool `env:"PPROF_ENABLED" env-default:"false"`
 	}
 	Client struct {
 		Protocol string `env:"CLIENT_PROTOCOL" env-default:"http"`

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
+	"github.com/highway-to-Golang/user-service/internal/monitoring"
 )
 
 func (uc *UseCase) GetUser(ctx context.Context, id string) (domain.User, error) {
@@ -27,6 +28,8 @@ func (uc *UseCase) GetUser(ctx context.Context, id string) (domain.User, error) 
 			slog.Warn("failed to publish event", "error", err, "method", "get")
 		}
 	}
+
+	monitoring.UsersRetrieved.Inc()
 
 	return user, nil
 }

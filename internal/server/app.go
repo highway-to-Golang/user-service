@@ -9,6 +9,7 @@ import (
 	"github.com/highway-to-Golang/user-service/internal/database"
 	"github.com/highway-to-Golang/user-service/internal/grpc"
 	"github.com/highway-to-Golang/user-service/internal/http"
+	"github.com/highway-to-Golang/user-service/internal/monitoring"
 	"github.com/highway-to-Golang/user-service/internal/nats"
 	"github.com/highway-to-Golang/user-service/internal/redis"
 	"github.com/highway-to-Golang/user-service/internal/repository"
@@ -16,6 +17,19 @@ import (
 )
 
 func Run(ctx context.Context, cfg *config.Config) error {
+	// Инициализация трассировки
+	if cfg.Tracing.Enabled {
+		if err := monitoring.InitTracer(cfg.Tracing.Service, cfg.Tracing.Jaeger.Endpoint); err != nil {
+			slog.Warn("Failed to initialize tracer", "error", err)
+		} else {
+			defer func() {
+				if err := monitoring.ShutdownTracer(context.Background()); err != nil {
+					slog.Error("Failed to shutdown tracer", "error", err)
+				}
+			}()
+		}
+	}
+
 	db, err := database.NewDB(ctx, *cfg)
 	if err != nil {
 		return err
