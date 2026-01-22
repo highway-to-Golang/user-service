@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -19,16 +19,20 @@ var (
 )
 
 // InitTracer инициализирует OpenTelemetry tracer
-func InitTracer(serviceName, jaegerEndpoint string) error {
-	if jaegerEndpoint == "" {
+func InitTracer(serviceName, otlpEndpoint string) error {
+	if otlpEndpoint == "" {
 		// Если endpoint не указан, используем noop tracer
 		tracer = otel.Tracer(serviceName)
 		return nil
 	}
 
-	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jaegerEndpoint)))
+	exp, err := otlptracehttp.New(
+		context.Background(),
+		otlptracehttp.WithEndpoint(otlpEndpoint),
+		otlptracehttp.WithInsecure(), // Используем insecure для локальной разработки
+	)
 	if err != nil {
-		return fmt.Errorf("failed to create Jaeger exporter: %w", err)
+		return fmt.Errorf("failed to create OTLP exporter: %w", err)
 	}
 
 	res, err := resource.Merge(

@@ -48,8 +48,10 @@ services:
     container_name: user-service-jaeger
     ports:
       - "16686:16686"  # UI
-      - "14268:14268"  # HTTP collector
-      - "14250:14250"  # gRPC collector
+      - "14268:14268"  # HTTP collector (legacy)
+      - "14250:14250"  # gRPC collector (legacy)
+      - "4318:4318"    # OTLP HTTP
+      - "4317:4317"    # OTLP gRPC
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     healthcheck:
@@ -120,7 +122,7 @@ services:
       - MONITORING_PORT=9090
       - TRACING_ENABLED=true
       - TRACING_SERVICE=user-service
-      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - OTLP_ENDPOINT=jaeger:4318
       - PPROF_ENABLED=false
     depends_on:
       postgres:

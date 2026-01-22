@@ -45,10 +45,10 @@ type (
 	Tracing struct {
 		Enabled bool   `env:"TRACING_ENABLED" env-default:"true"`
 		Service string `env:"TRACING_SERVICE" env-default:"user-service"`
-		Jaeger  Jaeger
+		OTLP    OTLP
 	}
-	Jaeger struct {
-		Endpoint string `env:"JAEGER_ENDPOINT" env-default:"http://localhost:14268/api/traces"`
+	OTLP struct {
+		Endpoint string `env:"OTLP_ENDPOINT" env-default:"localhost:4318"`
 	}
 	Pprof struct {
 		Enabled bool `env:"PPROF_ENABLED" env-default:"false"`

@@ -23,7 +23,7 @@ func main() {
 		slog.Error("Error creating client", "error", err)
 		os.Exit(1)
 	}
-	defer cl.Close()
+	defer func() { _ = cl.Close() }()
 
 	ctx := context.Background()
 

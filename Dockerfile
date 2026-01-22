@@ -10,6 +10,12 @@ RUN apk add --no-cache git make protobuf protobuf-dev
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Install protoc plugins and ensure they are in PATH
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+ENV PATH=$PATH:/go/bin
+
 # Copy source code
 COPY . .
 

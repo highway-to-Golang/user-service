@@ -19,7 +19,7 @@ import (
 func Run(ctx context.Context, cfg *config.Config) error {
 	// Инициализация трассировки
 	if cfg.Tracing.Enabled {
-		if err := monitoring.InitTracer(cfg.Tracing.Service, cfg.Tracing.Jaeger.Endpoint); err != nil {
+		if err := monitoring.InitTracer(cfg.Tracing.Service, cfg.Tracing.OTLP.Endpoint); err != nil {
 			slog.Warn("Failed to initialize tracer", "error", err)
 		} else {
 			defer func() {
@@ -54,7 +54,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-		defer is.Close()
+		defer func() { _ = is.Close() }()
 		idempotencyStorage = is
 	}
 

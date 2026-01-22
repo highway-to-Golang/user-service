@@ -45,11 +45,11 @@ func mapError(err error) error {
 		return nil
 	}
 
-	if errors.Is(domain.ErrNotFound, err) {
+	if errors.Is(err, domain.ErrNotFound) {
 		return status.Error(codes.NotFound, "user not found")
 	}
 
-	if errors.Is(apperrors.ErrRequestAlreadyInProgress, err) {
+	if errors.Is(err, apperrors.ErrRequestAlreadyInProgress) {
 		return status.Error(codes.Aborted, "request already in progress")
 	}
 
