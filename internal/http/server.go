@@ -15,9 +15,14 @@ type Server struct {
 }
 
 func NewServer(cfg config.Config, userHandler *UserHandler) *Server {
-	router := NewRouter(userHandler)
+	router := NewRouter(userHandler, cfg)
 
+	// Применяем middleware в правильном порядке (от внешнего к внутреннему)
 	handler := LoggingMiddleware(router)
+	handler = PrometheusMiddleware(handler)
+	if cfg.Tracing.Enabled {
+		handler = TracingMiddleware(handler)
+	}
 
 	addr := fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port)
 

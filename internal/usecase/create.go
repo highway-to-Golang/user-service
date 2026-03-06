@@ -8,6 +8,7 @@ import (
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
 	"github.com/highway-to-Golang/user-service/internal/errors"
+	"github.com/highway-to-Golang/user-service/internal/monitoring"
 )
 
 func (uc *UseCase) CreateUser(ctx context.Context, idempotencyKey string, req domain.CreateUserRequest) (domain.User, error) {
@@ -94,6 +95,8 @@ func (uc *UseCase) CreateUser(ctx context.Context, idempotencyKey string, req do
 	}
 
 	slog.Info("user created successfully", "user_id", user.ID, "email", user.Email)
+
+	monitoring.UsersCreated.Inc()
 
 	return user, nil
 }

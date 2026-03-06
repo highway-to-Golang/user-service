@@ -17,7 +17,17 @@ type Server struct {
 }
 
 func NewServer(cfg config.Config, userHandler *UserHandler) *Server {
-	grpcServer := grpc.NewServer()
+	interceptor := GetUnaryInterceptors(cfg.Tracing.Enabled)
+	statsHandler := GetStatsHandler(cfg.Tracing.Enabled)
+
+	opts := []grpc.ServerOption{
+		grpc.UnaryInterceptor(interceptor),
+	}
+	if statsHandler != nil {
+		opts = append(opts, grpc.StatsHandler(statsHandler))
+	}
+
+	grpcServer := grpc.NewServer(opts...)
 
 	user.RegisterUserServiceServer(grpcServer, userHandler)
 

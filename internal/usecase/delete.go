@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
+	"github.com/highway-to-Golang/user-service/internal/monitoring"
 )
 
 func (uc *UseCase) DeleteUser(ctx context.Context, id string) error {
@@ -26,6 +27,8 @@ func (uc *UseCase) DeleteUser(ctx context.Context, id string) error {
 			slog.Warn("failed to publish event", "error", err, "method", "delete")
 		}
 	}
+
+	monitoring.UsersDeleted.Inc()
 
 	return nil
 }

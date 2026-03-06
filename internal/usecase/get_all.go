@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/highway-to-Golang/user-service/internal/domain"
+	"github.com/highway-to-Golang/user-service/internal/monitoring"
 )
 
 func (uc *UseCase) GetAllUsers(ctx context.Context) ([]domain.User, error) {
@@ -17,9 +18,13 @@ func (uc *UseCase) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 		return nil, fmt.Errorf("failed to get users: %w", err)
 	}
 
-	if err := uc.eventSink.Publish(ctx, "get_all"); err != nil {
-		slog.Warn("failed to publish event", "error", err, "method", "get_all")
+	if uc.cfg.NATS.Enabled && uc.eventSink != nil {
+		if err := uc.eventSink.Publish(ctx, "get_all"); err != nil {
+			slog.Warn("failed to publish event", "error", err, "method", "get_all")
+		}
 	}
+
+	monitoring.UsersRetrieved.Add(float64(len(users)))
 
 	return users, nil
 }

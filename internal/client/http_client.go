@@ -44,7 +44,7 @@ func (c *HTTPClient) CreateUser(ctx context.Context, req domain.CreateUserReques
 	if err != nil {
 		return domain.User{}, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -73,7 +73,7 @@ func (c *HTTPClient) GetUser(ctx context.Context, id string) (domain.User, error
 	if err != nil {
 		return domain.User{}, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -102,7 +102,7 @@ func (c *HTTPClient) GetAllUsers(ctx context.Context) ([]domain.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -141,7 +141,7 @@ func (c *HTTPClient) UpdateUser(ctx context.Context, id string, req domain.Updat
 	if err != nil {
 		return domain.User{}, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -170,7 +170,7 @@ func (c *HTTPClient) DeleteUser(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
